@@ -12,7 +12,7 @@ import logging
 from typing import TYPE_CHECKING
 
 import torch
-from dgl.nn import Set2Set
+from dgl.nn.pytorch import Set2Set
 from torch import nn
 
 from matgl.config import DEFAULT_ELEMENTS
@@ -168,6 +168,7 @@ class MEGNet(nn.Module, IOMixIn):
             Prediction
         """
         node_feat, edge_feat, state_feat = self.embedding(node_feat, edge_feat, state_feat)
+        # print(node_feat)
         edge_feat = self.edge_encoder(edge_feat)
         node_feat = self.node_encoder(node_feat)
         state_feat = self.state_encoder(state_feat)
