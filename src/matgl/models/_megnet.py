@@ -7,7 +7,7 @@ generalization. For more details on MEGNet, please refer to::
     Molecules and Crystals._ Chem. Mater. 2019, 31 (9), 3564-3572. DOI: 10.1021/acs.chemmater.9b01294.
 """
 from __future__ import annotations
-
+import csv
 import logging
 from typing import TYPE_CHECKING
 
@@ -19,7 +19,7 @@ from matgl.config import DEFAULT_ELEMENTS
 from matgl.graph.compute import compute_pair_vector_and_distance
 from matgl.layers import MLP, ActivationFunction, BondExpansion, EdgeSet2Set, EmbeddingBlock, MEGNetBlock
 from matgl.utils.io import IOMixIn
-
+from pymatgen.core import Element
 if TYPE_CHECKING:
     import dgl
 
@@ -167,10 +167,15 @@ class MEGNet(nn.Module, IOMixIn):
         Returns:
             Prediction
         """
+        # 1维还需要embedding，多维直接替换掉embedding
+        # print("embedding前",node_feat,node_feat.shape)
+        node_feat = self.modify_node_embedding(node_feat)
         node_feat, edge_feat, state_feat = self.embedding(node_feat, edge_feat, state_feat)
-        # print(node_feat)
+
+        # print("embedding后", node_feat, node_feat.shape)
         edge_feat = self.edge_encoder(edge_feat)
         node_feat = self.node_encoder(node_feat)
+        # print("encoder后",node_feat,node_feat.shape)
         state_feat = self.state_encoder(state_feat)
 
         for block in self.blocks:
@@ -223,3 +228,49 @@ class MEGNet(nn.Module, IOMixIn):
         bond_vec, bond_dist = compute_pair_vector_and_distance(g)
         g.edata["edge_attr"] = self.bond_expansion(bond_dist)
         return self(g, g.edata["edge_attr"], g.ndata["node_type"], state_feats).detach()
+
+    def generate_element_map_from_csv(self, csv_filepath):
+        """
+        从CSV文件生成一个将化学元素名称映射到映射值的字典
+
+        参数:
+        csv_filepath (str): CSV文件的路径
+
+        返回:
+        dict: 包含化学元素名称映射到映射值的字典
+        """
+        element_map = {}
+        with open(csv_filepath, mode='r', encoding='utf-8') as csvfile:
+            reader = csv.reader(csvfile)
+            next(reader)  # 跳过标题行
+            for row in reader:
+                if len(row) == 2:  # 确保每行有两个元素
+                    element, value = row
+                    # 假设value是字符串形式的列表，我们需要将其转换为实际的列表对象
+                    # 这里使用eval来将字符串转换成Python对象，但在实际应用中需要确保安全性
+                    try:
+                        value = eval(value)
+                    except (SyntaxError, NameError):
+                        continue  # 如果转换失败，跳过这一行
+                    if isinstance(value, list) and len(value) == 1:
+                        element_map[element] = value[0]  # 只取列表中的单一元素
+        return element_map
+
+    def atomic_numbers_to_symbols(self, atomic_numbers):  # 输入node_feat，转化为化学元素
+        element_symbols = []
+        for atomic_number in atomic_numbers:
+            element = Element.from_Z(atomic_number.item()+1)
+            element_symbol = element.symbol
+            element_symbols.append(element_symbol)
+        return element_symbols
+
+    def modify_node_embedding(self, node_feat):
+        # 定义元素符号到数字的映射
+        symbol_to_number = self.generate_element_map(103)
+        # 调用函数将原子序数转换为元素符号
+        element_symbols = self.atomic_numbers_to_symbols(node_feat)
+        # 将元素符号转换为数字
+        element_numbers = [symbol_to_number[symbol] for symbol in element_symbols]
+        # 将数字列表转换为二维tensor
+        element_tensor = torch.tensor(element_numbers).unsqueeze(1)
+        return element_tensor
