@@ -169,10 +169,9 @@ class MEGNet(nn.Module, IOMixIn):
         """
         # 1维还需要embedding，多维直接替换掉embedding
         # print("embedding前",node_feat,node_feat.shape)
-        node_feat = self.modify_node_embedding(node_feat)
-        _, edge_feat, state_feat = self.embedding(node_feat, edge_feat, state_feat)
-
         # node_feat = self.modify_node_embedding(node_feat)
+        _, edge_feat, state_feat = self.embedding(node_feat, edge_feat, state_feat)
+        node_feat = self.modify_node_embedding(node_feat)
         # print("embedding后", node_feat, node_feat.shape)
         edge_feat = self.edge_encoder(edge_feat)
         node_feat = self.node_encoder(node_feat)
@@ -292,13 +291,14 @@ class MEGNet(nn.Module, IOMixIn):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         root_name = 'sorted_data-mds-11.17.csv'
         # 定义元素符号到数字的映射
-        symbol_to_number = self.generate_element_map_from_csv_equal_spacing(root_name)
+        # symbol_to_number = self.generate_element_map_from_csv_equal_spacing(root_name)
+        symbol_to_number = self.generate_element_map_from_csv_unequal_spacing(root_name)
         # 调用函数将原子序数转换为元素符号
         element_symbols = self.atomic_numbers_to_symbols(node_feat)
         # 将元素符号转换为数字
         element_numbers = [symbol_to_number[symbol] for symbol in element_symbols]
         # 将数字列表转换为二维tensor。这个是用他的nn.embedding的
-        element_tensor = torch.tensor(element_numbers).to(device)
+        # element_tensor = torch.tensor(element_numbers).to(device)
         # 不用他的nn embeeding 直接转化为对应的嵌入结果
-        # element_tensor = torch.tensor(element_numbers).unsqueeze(1).to(device)
+        element_tensor = torch.tensor(element_numbers).unsqueeze(1).to(device)
         return element_tensor
