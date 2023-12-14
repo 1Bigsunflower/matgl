@@ -223,7 +223,7 @@ if __name__ == '__main__':
 
     # setup the architecture of MEGNet model
     model = MEGNet(
-        dim_node_embedding=1,
+        dim_node_embedding=16,
         dim_edge_embedding=100,
         dim_state_embedding=2,
         nblocks=3,
@@ -247,14 +247,14 @@ if __name__ == '__main__':
 
     early_stop_callback = EarlyStopping(monitor="val_MAE", min_delta=0.00, patience=20, verbose=True, mode="min")
     # Training
-    logger = CSVLogger("logs", name="MEGNet_training")
+    logger = CSVLogger("logs", name="MEGNet_org_16dimension")
     trainer = pl.Trainer(max_epochs=1000, logger=logger, callbacks=[early_stop_callback])  # 指定gpus参数为1表示使用一块GPU进行训练
     trainer.fit(model=lit_module, train_dataloaders=train_loader, val_dataloaders=val_loader)
 
     # 保存模型
-    save_path = "saved_models/node_original"
-    metadata = {"description": "MEGNet trained using original node embedding",
-                "training_set": "node embedding dimension = 1"}
+    save_path = "saved_models/node_original-16"
+    metadata = {"description": "MEGNet trained using original node embedding 16 dimension",
+                "training_set": "node embedding dimension = 16"}
     model.save(save_path, metadata=metadata)
     # 测试部分
     model.eval()
