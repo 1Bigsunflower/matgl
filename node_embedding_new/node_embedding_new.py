@@ -58,11 +58,6 @@ def load_dataset() -> tuple[list[Structure], list[str], list[float]]:
     Returns:
         tuple[list[Structure], list[str], list[float]]: structures, mp_id, Eform_per_atom
     """
-    # # 下载数据集
-    # if not os.path.exists("mp.2018.6.1.json"):
-    #     f = RemoteFile("https://figshare.com/ndownloader/files/15087992")
-    #     with zipfile.ZipFile(f.local_path) as zf:
-    #         zf.extractall(".")
     # 读取数据集（完整）
     data = pd.read_json("../node_embedding/mp.2018.6.1.json")
     # data = pd.read_json("../node_embedding/first_10_data.json")
@@ -77,97 +72,15 @@ def load_dataset() -> tuple[list[Structure], list[str], list[float]]:
     return structures, mp_ids, data["formation_energy_per_atom"].tolist()
 
 
-# class MyMEGNET(MEGNet):
-#     def __int__(
-#             self,
-#             dim_node_embedding: int = 1,
-#             node_embeddings=None,
-#             **kwargs
-#     ):
-#         super().__init__(dim_node_embedding=dim_node_embedding, **kwargs)
-#         self.node_embeddings = node_embeddings
-#
-#     def forward(
-#             self,
-#             graph: dgl.DGLGraph,
-#             edge_feat: torch.Tensor,
-#             node_feat: torch.Tensor,
-#             state_feat: torch.Tensor, ):
-#
-#         """Forward pass of MEGnet. Executes all blocks.
-#
-#                 Args:
-#                     graph: Input graph
-#                     edge_feat: Edge features
-#                     node_feat: Node features
-#                     state_feat: State features.
-#
-#                 Returns:
-#                     Prediction
-#                 """
-#         # print("embedding前",node_feat)
-#         _, edge_feat, state_feat = self.embedding(node_feat, edge_feat, state_feat)
-#         # 修改node_feat的embedding
-#         node_feat = self.modify_node_embedding(node_feat)
-#         # print("embedding后", node_feat)
-#         edge_feat = self.edge_encoder(edge_feat)
-#         node_feat = self.node_encoder(node_feat)
-#         state_feat = self.state_encoder(state_feat)
-#
-#         for block in self.blocks:
-#             output = block(graph, edge_feat, node_feat, state_feat)
-#             edge_feat, node_feat, state_feat = output
-#
-#         node_vec = self.node_s2s(graph, node_feat)
-#         edge_vec = self.edge_s2s(graph, edge_feat)
-#
-#         node_vec = torch.squeeze(node_vec)
-#         edge_vec = torch.squeeze(edge_vec)
-#         state_feat = torch.squeeze(state_feat)
-#
-#         vec = torch.hstack([node_vec, edge_vec, state_feat])
-#
-#         if self.dropout:
-#             vec = self.dropout(vec)  # pylint: disable=E1102
-#
-#         output = self.output_proj(vec)
-#         if self.is_classification:
-#             output = torch.sigmoid(output)
-#
-#         return torch.squeeze(output)
-#
-#     # embedding嵌入的方法
-#     def modify_node_embedding(self, node_feat: torch.Tensor) -> torch.Tensor:
-#         if self.node_embeddings is not None:
-#             return self.node_embeddings[node_feat.long()]
-#
-#         # 如果没有传递嵌入表示，则使用默认的处理方式
-#         modified_node_feat = []
-#         for atomic_number in node_feat:
-#             modified_node_feat.append(self.default_embedding())
-#
-#         return torch.tensor(modified_node_feat)
-#
-#     def default_embedding(self) -> List[float]:
-#         # 默认的嵌入表示
-#         return [0.0] * 1
-
-
 if __name__ == '__main__':
 
     if torch.cuda.is_available():
         torch.cuda.set_device(0)
 
+    # 结构,_,标签
     structures, mp_ids, eform_per_atom = load_dataset()
 
-    # 从整套结构中选择 100 个结构
-    # structures
-    # structures = structures[:100]
-    # # label
-    # eform_per_atom = eform_per_atom[:100]
-    # get element types in the dataset
-    # elem_list = get_element_list(structures)
-    # # 数据集中所有的元素类型
+    # 数据集中所有的元素类型
     elem_list = get_periodic_table_elements(103)  # 。z
     # 结构转化为图
     converter = Structure2Graph(element_types=elem_list, cutoff=4.0)
@@ -198,9 +111,6 @@ if __name__ == '__main__':
         num_workers=0,
         pin_memory=torch.cuda.is_available()
     )
-
-    # 设置嵌入层
-    # node_embed = torch.nn.Embedding(len(elem_list), 1)
 
     # define the bond expansion
     bond_expansion = BondExpansion(rbf_type="Gaussian", initial=0.0, final=5.0, num_centers=100, width=0.5)
@@ -234,7 +144,7 @@ if __name__ == '__main__':
     # setup the MEGNetTrainer
     lit_module = ModelLightningModule(model=model)
 
-    early_stop_callback = EarlyStopping(monitor="val_MAE", min_delta=0.00, patience=10, verbose=True, mode="min")
+    early_stop_callback = EarlyStopping(monitor="val_MAE", min_delta=0.00, patience=20, verbose=True, mode="min")
     # Training
     logger = CSVLogger("logs", name="MEGNet_training_no_nf_same_distance")
 
@@ -242,8 +152,8 @@ if __name__ == '__main__':
     trainer.fit(model=lit_module, train_dataloaders=train_loader, val_dataloaders=val_loader)
 
     # 保存模型
-    save_path = "saved_models_no_embed/node_new"
-    metadata = {"description": "MEGNet trained using new node embedding",
+    save_path = "saved_models/1dim_unembed"
+    metadata = {"description": "MEGNet trained using my node embedding with 1 dimension",
                 "training_set": "node embedding dimension = 1"}
     model.save(save_path, metadata=metadata)
     # 测试部分
