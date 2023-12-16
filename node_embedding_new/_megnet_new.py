@@ -11,6 +11,8 @@ import csv
 import logging
 from typing import TYPE_CHECKING
 
+import ast
+
 import torch
 from dgl.nn.pytorch import Set2Set
 from torch import nn
@@ -249,14 +251,15 @@ class MEGNet(nn.Module, IOMixIn):
             for row in reader:
                 if len(row) == 2:  # 确保每行有两个元素
                     element, value = row
+                    element_map[element] = value
                     # 假设value是字符串形式的列表，我们需要将其转换为实际的列表对象
                     # 这里使用eval来将字符串转换成Python对象，但在实际应用中需要确保安全性
-                    try:
-                        value = eval(value)
-                    except (SyntaxError, NameError):
-                        continue  # 如果转换失败，跳过这一行
-                    if isinstance(value, list) and len(value) == 1:
-                        element_map[element] = round(value[0], 3)  # 只取列表中的单一元素，保留三位有效数字
+                    # try:
+                    #     value = eval(value)
+                    # except (SyntaxError, NameError):
+                    #     continue  # 如果转换失败，跳过这一行
+                    # if isinstance(value, list) and len(value) == 1:
+                    #     element_map[element] = round(value[0], 3)  # 只取列表中的单一元素，保留三位有效数字
         return element_map
 
     def generate_element_map_from_csv_equal_spacing(self, csv_filepath):  # 等间距，按照元素在csv中出现的顺序
@@ -289,16 +292,26 @@ class MEGNet(nn.Module, IOMixIn):
 
     def modify_node_embedding(self, node_feat):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        root_name = 'sorted_data-mds-11.17.csv'
+        # root_name = 'sorted_data-mds-11.17.csv'
+        root_name = 'MDS_16dim.csv'
         # 定义元素符号到数字的映射
         # symbol_to_number = self.generate_element_map_from_csv_equal_spacing(root_name)
         symbol_to_number = self.generate_element_map_from_csv_unequal_spacing(root_name)
+
         # 调用函数将原子序数转换为元素符号
         element_symbols = self.atomic_numbers_to_symbols(node_feat)
-        # 将元素符号转换为数字
+
+        # 将元素符号转换为嵌入结果
         element_numbers = [symbol_to_number[symbol] for symbol in element_symbols]
+
         # 将数字列表转换为二维tensor。这个是用他的nn.embedding的
         # element_tensor = torch.tensor(element_numbers).to(device)
-        # 不用他的nn embeeding 直接转化为对应的嵌入结果
-        element_tensor = torch.tensor(element_numbers).unsqueeze(1).to(device)
+
+        # 不用他的nn embeeding 直接转化为对应的嵌入结果 1维
+        # element_tensor = torch.tensor(element_numbers).unsqueeze(1).to(device)
+
+        # 16维 mds 不用他的emb
+        element_numbers = [ast.literal_eval(x) for x in element_numbers]
+        element_tensor = torch.tensor(element_numbers).to(device)
+
         return element_tensor
