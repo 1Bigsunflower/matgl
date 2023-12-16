@@ -20,7 +20,7 @@ from tqdm import tqdm
 from matgl.ext.pymatgen import Structure2Graph, get_element_list
 from matgl.graph.data import MEGNetDataset, MGLDataLoader, collate_fn
 from matgl.layers import BondExpansion
-from matgl.models._megnet import MEGNet
+from _megnet import MEGNet
 from matgl.utils.io import RemoteFile
 from matgl.utils.training import ModelLightningModule
 from pymatgen.core import Element
