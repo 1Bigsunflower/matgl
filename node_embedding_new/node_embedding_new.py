@@ -146,7 +146,7 @@ if __name__ == '__main__':
 
     early_stop_callback = EarlyStopping(monitor="val_MAE", min_delta=0.00, patience=20, verbose=True, mode="min")
     # Training
-    logger = CSVLogger("logs", name="MEGNet_training_no_nf_same_distance")
+    logger = CSVLogger("logs", name="MEGNet_training_no_nf_different_distance")
 
     trainer = pl.Trainer(max_epochs=1000, logger=logger, callbacks=[early_stop_callback])  # 指定gpus参数为1表示使用一块GPU进行训练
     trainer.fit(model=lit_module, train_dataloaders=train_loader, val_dataloaders=val_loader)
