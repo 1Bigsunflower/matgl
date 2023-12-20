@@ -1,9 +1,0 @@
-task_name: matbench_phonons
-folder: /gpfs/scratch/acad/tcos/liuxt/phonons
-split_ratio: 0.9
-yeo_johnson_before_norm: True
-train_norm: True
-augmentation: 1
-train_path_precalculated_times: 5000
-vali_path_precalculated_times: 1000
-test_path_precalculated_times: 200

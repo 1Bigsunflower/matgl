@@ -1,9 +1,0 @@
-task_name: matbench_mp_is_metal
-folder: /gpfs/scratch/acad/tcos/liuxt/is_metal
-split_ratio: 0.99
-yeo_johnson_before_norm: False
-train_norm: False
-augmentation: 1
-train_path_precalculated_times: 500
-vali_path_precalculated_times: 500
-test_path_precalculated_times: 200

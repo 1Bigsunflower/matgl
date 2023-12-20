@@ -1,9 +1,0 @@
-task_name: matbench_mp_e_form
-folder: /gpfs/scratch/acad/tcos/liuxt/e_form
-split_ratio: 0.9
-yeo_johnson_before_norm: True
-train_norm: True
-augmentation: 1
-train_path_precalculated_times: 500
-vali_path_precalculated_times: 500
-test_path_precalculated_times: 200
