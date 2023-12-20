@@ -170,8 +170,8 @@ class MEGNet(nn.Module, IOMixIn):
         # 1维还需要embedding，多维直接替换掉embedding
         # print("embedding前",node_feat,node_feat.shape)
         # node_feat = self.modify_node_embedding(node_feat)
-        _, edge_feat, state_feat = self.embedding(node_feat, edge_feat, state_feat)
-        node_feat = self.modify_node_embedding(node_feat)
+        node_feat, edge_feat, state_feat = self.embedding(node_feat, edge_feat, state_feat)
+        # node_feat = self.modify_node_embedding(node_feat)
         # print("embedding后", node_feat, node_feat.shape)
         edge_feat = self.edge_encoder(edge_feat)
         node_feat = self.node_encoder(node_feat)
@@ -289,7 +289,7 @@ class MEGNet(nn.Module, IOMixIn):
 
     def modify_node_embedding(self, node_feat):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        root_name = 'sorted_data-mds-11.17.csv'
+        root_name = 'mds_1_orig.csv'
         # 定义元素符号到数字的映射
         # symbol_to_number = self.generate_element_map_from_csv_equal_spacing(root_name)
         symbol_to_number = self.generate_element_map_from_csv_unequal_spacing(root_name)
