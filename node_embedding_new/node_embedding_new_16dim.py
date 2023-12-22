@@ -148,10 +148,10 @@ if __name__ == '__main__':
     # Training
     logger = CSVLogger("logs", name="MEGNet_training_16dim_mds")
 
-    trainer = pl.Trainer(max_epochs=1000, logger=logger, callbacks=[early_stop_callback])  # 指定gpus参数为1表示使用一块GPU进行训练
+    trainer = pl.Trainer(max_epochs=1000, logger=logger, callbacks =[early_stop_callback])  # 指定gpus参数为1表示使用一块GPU进行训练
     trainer.fit(model=lit_module, train_dataloaders=train_loader, val_dataloaders=val_loader)
 
-    # 保存模型
+    # 保存模型 
     save_path = "saved_models/16dim_unembed"
     metadata = {"description": "MEGNet trained using 16 dimension mds",
                 "training_set": "node embedding dimension = 16"}
